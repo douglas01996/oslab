@@ -1,0 +1,58 @@
+#include "common.h"
+#include "string.h"
+#include "game.h"
+
+#define letter_num 5
+/* a-z对应的键盘扫描码 */
+/*static int letter_code[] = {
+	30, 48, 46, 32, 18, 33, 34, 35, 23, 36,
+	37, 38, 50, 49, 24, 25, 16, 19, 31, 20,
+	22, 47, 17, 45, 21, 44
+};*/
+static int letter_code[]={17,31,30,32,57};
+/* 对应键按下的标志位 */
+bool letter_pressed[26];
+enum{EMPTY,WAIT,RELEASE,PRESS};
+
+void
+press_key(int scan_code) {
+	int i;
+	for (i = 0; i < letter_num; i ++) {
+		if (letter_code[i] == scan_code) {
+			letter_pressed[i] = TRUE;
+		}
+	}
+	for(i=0;i<letter_num;i++)
+	{
+		if((letter_code[i]|0x80)==(scan_code)) letter_pressed[i]=FALSE;
+	}
+}
+
+void
+release_key(int index) {
+	assert(0 <= index && index < 26);
+	letter_pressed[index] = FALSE;
+}
+
+bool
+query_key(volatile int index) {
+//	assert(0 <= index && index < 26);
+//	asm volatile("int $0x80"::"a"(2),"c"(index));
+//	asm volatile("movl %eax,0x8(%ebp)");
+//	printk("%d",index);
+	return letter_pressed[index];	
+}
+
+/* key_code保存了上一次键盘事件中的扫描码 */
+static volatile int key_code = 0;
+
+int last_key_code(void) {
+	return key_code;
+}
+
+void
+keyboard_event(int code) {
+	key_code = code;
+	press_key(code);
+}
+

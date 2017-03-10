@@ -1,0 +1,78 @@
+#include "types.h"
+#include "common.h"
+#include "fs.h"
+#define FCB_NUM 10
+int filecnt=0;
+/*
+struct FCB
+{
+	int name,pointer,state,size;
+	uint32_t infoblock[512/4];
+};
+*/
+struct FCB flist[FCB_NUM];
+
+void fcb_init()
+{
+	int i;
+	for(i=0;i<FCB_NUM;i++)
+		flist[i].state=0;
+	filecnt=0;	
+}
+
+int fs_open(char *pathname)
+{
+	int i,alloced;
+	for(i=0;i<FCB_NUM;i++)
+		if(flist[i].state==0)break;
+	if(i==FCB_NUM){printk("FAIL\n");while(1);}
+	alloced=i;
+	flist[alloced].state=1;
+	filecnt++;
+	flist[alloced].name=filecnt;
+	flist[alloced].pointer=0;
+	filefind(&flist[alloced],pathname);
+	return filecnt;
+}
+
+void fs_close(int fp)
+{
+	int i;
+	for(i=0;i<FCB_NUM;i++)
+		if(flist[i].name==fp)break;
+	if(i==FCB_NUM){printk("FAIL\n");while(1);}
+	flist[i].state=0;
+}
+
+void fs_read(unsigned char *loc,int fp,int cnt)
+{
+	int i;
+	for(i=0;i<FCB_NUM;i++)
+		if(flist[i].name==fp)break;
+	if(i==FCB_NUM){printk("FAIL\n");while(1);}
+	fileread(loc,cnt,flist[i].pointer,&flist[i]);
+
+}
+
+void fs_write(unsigned char *loc,int fp,int cnt)
+{
+	int i;
+	for(i=0;i<FCB_NUM;i++)
+		if(flist[i].name==fp)break;
+	if(i==FCB_NUM){printk("FAIL\n");while(1);}
+	filewrite(loc,cnt,flist[i].pointer,&flist[i]);
+
+}
+
+void fs_seek(int fp,int move)
+{
+	int i;
+	for(i=0;i<FCB_NUM;i++)
+		if(flist[i].name==fp)break;
+	if(i==FCB_NUM){printk("FAIL\n");while(1);}
+	flist[i].pointer+=move;
+	if(flist[i].pointer<0)flist[i].pointer=0;
+	if(flist[i].pointer>flist[i].size)
+		flist[i].pointer=flist[i].size;
+	
+}
